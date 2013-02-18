@@ -3,18 +3,13 @@
 
 
 #include "ofMain.h"
+#include "ofEvents.h"
 #include <fstream>
 
-#define SPACE_VAL 7
+#define SPACE_VAL 1
 
 class testApp : public ofBaseApp{
 
-	struct word {
-		string term;
-		string sound;
-		int len;
-	};
-	
 	public:
 		void setup();
 		void update();
@@ -28,12 +23,9 @@ class testApp : public ofBaseApp{
 		void mouseReleased(int x, int y, int button);
 
 		ofTrueTypeFont 	times;
-	
-		ifstream dict;
-		vector <word> terms;
-	
-		ifstream fin; //declare a file stream
-		vector <string> data; //declare a vector of strings to store data
+
+		ifstream fin;
+		vector <string> data;
 		vector <int> time;
 	
 		int word;
@@ -41,6 +33,22 @@ class testApp : public ofBaseApp{
         double timer;
 
         bool debug;
+    
+        bool bFwd;
+        bool bPaused;
+    
+    
+        ofArduino	ard;
+        bool		bSetupArduino;
+        
+    private:
+        
+        void setupArduino(const int & version);
+        void digitalPinChanged(const int & pinNum);
+        void analogPinChanged(const int & pinNum);
+        void updateArduino();
+        
+    
 };
 
 #endif

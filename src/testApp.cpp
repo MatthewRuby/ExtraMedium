@@ -8,37 +8,9 @@ void testApp::setup(){
 	
 	ofBackground(255, 255, 255);
 
-	
-	
-	dict.open(ofToDataPath("phones.txt").c_str());
-	while(dict != NULL){
-		string w; //declare a string for storage
-		getline(dict, w, '\n');
-		
-		int pos = w.find(" ");
-        if (pos > 0) {
-            string word = w.substr(0,pos);
-            string phone = w.substr(pos,w.length());
 
-            string sound = w.substr(pos);
-            int length = sound.length();
-         
-            struct word t;
-            t.term = word;
-            t.sound = sound;
-            t.len = length;
-            terms.push_back(t);
-            //cout << word << " = " << sound << " -> " << length << endl;
-        }
-	}
-	
-	
 	
 	fin.open(ofToDataPath("vonnegut.txt").c_str()); //open your text file
-	
-	
-
-
 	size_t findNL;
 	while(fin!=NULL){ //as long as theres still text to be read
 		
@@ -64,102 +36,132 @@ void testApp::setup(){
 			}
 			
 			data.push_back(str1);
-            cout << "add data str 1" << endl;
-            bool foundTerm = false;
-            for (int i = 0; i < terms.size(); i++) {
-                if (terms[i].term == str1) {
-                    foundTerm = true;
-                    int l = terms[i].len;
-                    time.push_back(l);
-                    cout << "add time found phone" << endl;
-                }
-            }
-            if (foundTerm == false) {
-                int l = str1.length();
-                time.push_back(l);
-                cout << "add time phone not found " << endl;
-            }
+            time.push_back(str1.length());
+
             
 			data.push_back(" ");
-            cout << "add data space" << endl;
             time.push_back(SPACE_VAL);
             
-            foundTerm = false;
-			data.push_back(str2);
-            cout << "add data str 2" << endl;
-            for (int i = 0; i < terms.size(); i++) {
-                if (terms[i].term == str2) {
-                    foundTerm = true;
-                    int l = terms[i].len;
-                    time.push_back(l);
-                    cout << "add time found phone" << endl;
-                }
-            }
-            if (foundTerm == false) {
-                int l = str2.length();
-                time.push_back(l);
-                cout << "add time phone not found " << endl;
-            }
+            data.push_back(str2);
+            time.push_back(str2.length());
+            
+            data.push_back(" ");
+            time.push_back(SPACE_VAL);
 			
 		} else {
-			
-			data.push_back(str);
-            cout << "add data str" << endl;
-            bool foundTerm = false;
-			data.push_back(str);
-            for (int i = 0; i < terms.size(); i++) {
-                if (terms[i].term == str) {
-                    foundTerm = true;
-                    int l = terms[i].len;
-                    time.push_back(l);
-                    cout << "add time found phone" << endl;
-                }
-            }
-            if (foundTerm == false) {
-                int l = str.length();
-                time.push_back(l);
-                cout << "add time phone not found " << endl;
-            }
+            
+            data.push_back(str);
+            time.push_back(str.length());
 		}
 	}
     
     cout << data.size() << endl;
     cout << time.size() << endl;
-/*
-	size_t findPageNum;
-	
-	for (int i = 0; i < data.size(); i++) {
-		 if (isdigit(data[i][0]) != 0) {
-			 if (data[i+1] == "of") {
-				 if (isdigit(data[i+2][0]) != 0) {
-					 if (data[i+7] == "Cities") {
-						 data.erase(data.begin()+i, data.begin()+i + 8);
-					 }
-				 }
-			 }
-		 }
-	}
-*/
+
+    
 	times.loadFont("times.ttf", 120);
     
     word = 0;
 	controlSpeed = 0.2;
     timer = 0;
     
-    debug = false;
+    debug = true;
+    
+    bFwd = true;
+    bPaused = false;
+    
+	ard.connect("/dev/tty.usbmodemfd121", 57600);
+
+	ofAddListener(ard.EInitialized, this, &testApp::setupArduino);
+	bSetupArduino	= false;
+   
 }
 
 //--------------------------------------------------------------
 void testApp::update(){
 
+    updateArduino();
+    
 	if (ofGetFrameNum() > 120) {
 		if (ofGetElapsedTimef() > timer) {
-            cout << "change" << endl;
-            word++;
+            
+            if (bFwd) {
+                if(word < data.size()){
+                    word++;
+                }
+            } else {
+                if(word < 1){
+                     word--;
+                }
+            }
+            
             timer = ofGetElapsedTimef() + (time[word] * controlSpeed);
 		}
 	}
     
+    if (bPaused) {
+        timer = ofGetElapsedTimef() + (time[word] * controlSpeed);
+    }
+    
+}
+
+//--------------------------------------------------------------
+void testApp::setupArduino(const int & version) {
+	ofRemoveListener(ard.EInitialized, this, &testApp::setupArduino);
+
+    bSetupArduino = true;
+
+    cout << ard.getFirmwareName() << endl;
+    cout << "firmata v" << ard.getMajorFirmwareVersion() << "." << ard.getMinorFirmwareVersion() << endl;
+
+    ard.sendDigitalPinMode(4, ARD_INPUT);
+
+    ard.sendAnalogPinReporting(0, ARD_ANALOG);
+    ard.sendAnalogPinReporting(1, ARD_ANALOG);
+
+	ard.sendDigitalPinMode(6, ARD_OUTPUT);
+    ard.sendDigitalPinMode(7, ARD_OUTPUT);
+
+    ofAddListener(ard.EDigitalPinChanged, this, &testApp::digitalPinChanged);
+    ofAddListener(ard.EAnalogPinChanged, this, &testApp::analogPinChanged);
+}
+
+//--------------------------------------------------------------
+void testApp::updateArduino(){
+    
+    ard.update();
+    
+	if (bSetupArduino) {
+        if(bPaused){
+            ard.sendDigital(7, ARD_HIGH);
+            ard.sendDigital(6, ARD_LOW);
+        } else {
+            ard.sendDigital(6, ARD_HIGH);
+            ard.sendDigital(7, ARD_LOW);
+        }
+	}
+    
+}
+
+//--------------------------------------------------------------
+void testApp::digitalPinChanged(const int & pinNum) {
+    if(ard.getDigital(4)){
+        bPaused = !bPaused;
+    }
+}
+
+//--------------------------------------------------------------
+void testApp::analogPinChanged(const int & pinNum) {
+
+    float speed = ofMap(ard.getAnalog(0), 0, 1024, 0.001, 1.0);
+    controlSpeed = speed;
+
+    if (ard.getAnalog(1) > 512) {
+        bFwd = false;
+    } else {
+        bFwd = true;
+    }
+  
 }
 
 //--------------------------------------------------------------
@@ -177,6 +179,8 @@ void testApp::draw(){
         ofDrawBitmapString("this word = " + ofToString(time[word] * controlSpeed), 10, 70);
         ofDrawBitmapString("next change = " + ofToString(timer), 10, 90);
         ofDrawBitmapString("current time = " + ofToString(ofGetElapsedTimef()), 10, 110);
+        ofDrawBitmapString("paused = " + ofToString(bPaused), 10, 130);
+        ofDrawBitmapString("forward = " + ofToString(bFwd), 10, 150);
     }
     
     
