@@ -13,10 +13,10 @@ void loadBook(vector<string> *w, vector<float> *t, string path){
     
     size_t findNL;
 	while( data != NULL) {
-		string str;
+        string str;
 		getline(data, str, ' ');
 		findNL = str.find('\n');
-
+        
 		if(findNL != string::npos){
 			string str1 = "";
 			string str2 = "";
@@ -57,7 +57,7 @@ void loadBook(vector<string> *w, vector<float> *t, string path){
 			} else {
 				t->push_back(SPACE_VAL);
 			}
-		}
+        }
 	}
 }
 
@@ -65,10 +65,11 @@ void loadBook(vector<string> *w, vector<float> *t, string path){
 void testApp::setup(){
 	ofSetFrameRate(60);
 	ofSetVerticalSync(true);
-	ofBackground(255,255,255);
+	ofBackground(0,0,0);
 	ofSetRectMode(OF_RECTMODE_CENTER);
+    ofEnableSmoothing();
 
-    
+
     titleIndex = 0;
     bookData[0] = "SemplicaGirls.txt";
     bookData[1] = "HarrisonBerg.txt";
@@ -81,10 +82,11 @@ void testApp::setup(){
     titles[3] = "A TALE OF TWO CITIES\n by Charles Dickens";
 
     loadBook(&word, &delay, bookData[titleIndex]);
+
     
 	total_words = word.size();
 	total_delays = delay.size();
-    
+
 	index = 0;
 	timer = 0;
 	times.loadFont("times.ttf", 60);
@@ -92,26 +94,115 @@ void testApp::setup(){
 	debug = true;
 	currentDelay = log(1 + delay[index]) * ctrlSpeed;
 
+    bFwd = true;
+    bPaused = false;
+    
+	ard.connect("/dev/tty.usbmodemfd121", 57600);
+
+	ofAddListener(ard.EInitialized, this, &testApp::setupArduino);
+	bSetupArduino	= false;
+
 }
 
 //--------------------------------------------------------------
 void testApp::update(){
 
-	if(ofGetElapsedTimef() > 5.0){
+    updateArduino();
+    
+	if (ofGetFrameNum() > 5.0) {
+        
+        
+		if (ofGetElapsedTimef() > timer) {
+            
+            if (bFwd) {
+                if(index < word.size()){
+                    index++;
+                    currentDelay = log(1 + delay[index]) * ctrlSpeed;
+                    timer = ofGetElapsedTimef() + currentDelay;
+                }
+            } else {
+                if(index < 1){
+                    index++;
+                    currentDelay = log(1 + delay[index]) * ctrlSpeed;
+                    timer = ofGetElapsedTimef() + currentDelay;
+                }
+            }
 
-		if(ofGetElapsedTimef() > timer){
-			index++;
-			currentDelay = log(1 + delay[index]) * ctrlSpeed;
-			timer = ofGetElapsedTimef() + currentDelay;
 		}
 
 	}
+
+            
+            
+    if (bPaused) {
+        timer = ofGetElapsedTimef() + (delay[index] * ctrlSpeed);
+    }
+    
+}
+
+//--------------------------------------------------------------
+void testApp::setupArduino(const int & version) {
+	ofRemoveListener(ard.EInitialized, this, &testApp::setupArduino);
+
+    bSetupArduino = true;
+
+    cout << ard.getFirmwareName() << endl;
+    cout << "firmata v" << ard.getMajorFirmwareVersion() << "." << ard.getMinorFirmwareVersion() << endl;
+
+    ard.sendDigitalPinMode(4, ARD_INPUT);
+
+    ard.sendAnalogPinReporting(0, ARD_ANALOG);
+    ard.sendAnalogPinReporting(1, ARD_ANALOG);
+
+	ard.sendDigitalPinMode(6, ARD_OUTPUT);
+    ard.sendDigitalPinMode(7, ARD_OUTPUT);
+
+    ofAddListener(ard.EDigitalPinChanged, this, &testApp::digitalPinChanged);
+    ofAddListener(ard.EAnalogPinChanged, this, &testApp::analogPinChanged);
+}
+
+//--------------------------------------------------------------
+void testApp::updateArduino(){
+    
+    ard.update();
+    
+	if (bSetupArduino) {
+        if(bPaused){
+            ard.sendDigital(7, ARD_HIGH);
+            ard.sendDigital(6, ARD_LOW);
+        } else {
+            ard.sendDigital(6, ARD_HIGH);
+            ard.sendDigital(7, ARD_LOW);
+        }
+	}
+    
+}
+
+//--------------------------------------------------------------
+void testApp::digitalPinChanged(const int & pinNum) {
+    if(ard.getDigital(4)){
+        bPaused = !bPaused;
+    }
+}
+
+//--------------------------------------------------------------
+void testApp::analogPinChanged(const int & pinNum) {
+
+    float speed = ofMap(ard.getAnalog(0), 0, 1024, 0.001, 1.0);
+    ctrlSpeed = speed;
+
+    if (ard.getAnalog(1) > 512) {
+        bFwd = false;
+    } else {
+        bFwd = true;
+    }
+
 }
 
 //--------------------------------------------------------------
 void testApp::draw(){
 
-	ofSetColor(0,0,0);
+	ofSetColor(255,255,255);
 
 	if(debug){
         
@@ -126,10 +217,11 @@ void testApp::draw(){
 		ofDrawBitmapString("Word Delay = " + ofToString(delay[index]), 500, ofGetHeight() - 30);
 		ofDrawBitmapString("This Delay = " + ofToString(currentDelay), 500, ofGetHeight() - 10);
         
+        ofDrawBitmapString("Paused = " + ofToString(bPaused), 750, ofGetHeight() - 50);
+		ofDrawBitmapString("Forward = " + ofToString(bFwd), 750, ofGetHeight() - 30);
+        
 	}
 
-    
-    
 	ofRectangle rect = times.getStringBoundingBox(word[index], 0, 0);
 	times.drawString(word[index], (ofGetWidth()/2) - (rect.width/2), (ofGetHeight()/2) + 30);
 

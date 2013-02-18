@@ -3,6 +3,7 @@
 #define _TEST_APP
 
 #include "ofMain.h"
+#include "ofEvents.h"
 #include <fstream>
 
 #define SPACE_VAL 1.0
@@ -17,6 +18,7 @@ class testApp : public ofBaseApp{
 
 		void keyPressed(int key);
 		void keyReleased(int key);
+
 
         ofTrueTypeFont		times;
     
@@ -36,6 +38,22 @@ class testApp : public ofBaseApp{
 		int                 total_delays;
 
 		bool                debug;
+
+    
+        bool bFwd;
+        bool bPaused;
+
+        ofArduino	ard;
+        bool		bSetupArduino;
+        
+    private:
+        
+        void setupArduino(const int & version);
+        void digitalPinChanged(const int & pinNum);
+        void analogPinChanged(const int & pinNum);
+        void updateArduino();
+    
+
 };
 
 #endif
