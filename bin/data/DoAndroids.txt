@@ -1,18 +1,5 @@
 Do Androids Dream of Electric Sheep?
 By Phillip K. Dick
-<<<<<<< HEAD
-=======
-TO MAREN AUGUSTA BERGRUD AUGUST 10, 1923 — JUNE 14, 1967
-AND STILL I DREAM HE TREADS THE LAWN, WALKING GHOSTLY IN THE DEW,
-PIERCED BY MY GLAD SINGING THROUGH. Yeats
-AUCKLAND
-A TURTLE WHICH EXPLORER CAPTAIN COOK GAVE TO THE KING OF TONGA IN 1777 DIED YESTERDAY. IT WAS NEARLY 200 YEARS OLD.
-THE ANIMAL, CALLED TU'IMALILA, DIED AT THE ROYALPALACE GROUND IN THE TONGAN CAPITAL OF NUKU, ALOFA.
-THE PEOPLE OF TONGA REGARDED THE ANIMAL AS A CHIEF AND SPECIAL KEEPERS WERE APPOINTED TO LOOK AFTER IT. IT WAS BLINDED IN A BUSH FIRE A FEW YEARS AGO.
-TONGA RADIO SAID TU'IMALILA'S CARCASS WOULD BE SENT TO THE AUCKLAND MUSEUM IN NEW ZEALAND.
-Reuters, 1966
-ONE
->>>>>>> ae71e92b9be281be3301c9dcb0a3e8ac5ddad9bb
 A merry little surge of electricity piped by automatic alarm from the mood organ beside his bed awakened Rick Deckard. Surprised — it always surprised him to find himself awake without prior notice — he rose from the bed, stood up in his multicolored pajamas, and stretched. Now, in her bed, his wife Iran opened her gray, unmerry eyes, blinked, then groaned and shut her eyes again.
 "You set your Penfield too weak he said to her. "I'll reset it and you'll be awake and — "
 "Keep your hand off my settings." Her voice held bitter sharpness. "I don't want to be awake."

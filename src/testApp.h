@@ -18,19 +18,24 @@ class testApp : public ofBaseApp{
 		void keyPressed(int key);
 		void keyReleased(int key);
 
-		ofTrueTypeFont		times;
-		ifstream 		book;
-		float 			time;
+        ofTrueTypeFont		times;
+    
+        string              bookData[4];
+        string              titles[4];
+        int                 titleIndex;
+    
+		ifstream            book;
+		float               time;
 		vector 	<string> 	word;
-		vector 	<int>		delay;
-		float			currentDelay;
-		float 			ctrlSpeed;
-		float			timer;
-		int			index;
-		int			total_words;
-		int			total_delays;
+		vector 	<float>		delay;
+		float               currentDelay;
+		float               ctrlSpeed;
+		float               timer;
+		int                 index;
+		int                 total_words;
+		int                 total_delays;
 
-		bool			debug;
+		bool                debug;
 };
 
 #endif
