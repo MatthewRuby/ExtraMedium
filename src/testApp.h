@@ -7,7 +7,7 @@
 #include <fstream>
 
 #define SPACE_VAL 1.0
-#define PERIOD_VAL 1.5
+#define PERIOD_VAL 3.0
 
 class testApp : public ofBaseApp{
 
@@ -18,7 +18,6 @@ class testApp : public ofBaseApp{
 
 		void keyPressed(int key);
 		void keyReleased(int key);
-
 
         ofTrueTypeFont		times;
     
@@ -34,12 +33,10 @@ class testApp : public ofBaseApp{
 		float               ctrlSpeed;
 		float               timer;
 		int                 index;
-		int                 total_words;
-		int                 total_delays;
 
 		bool                debug;
 
-    
+        bool bStarted;
         bool bFwd;
         bool bPaused;
 

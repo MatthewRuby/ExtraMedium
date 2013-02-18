@@ -1,11 +1,14 @@
 #include "testApp.h"
 
+static int total_words = 0;
+static int total_delays = 0;
+
 void loadBook(vector<string> *w, vector<float> *t, string path){
     if(w->size() > 0){
-        w->empty();
+        w->clear();
     }
     if(t->size() > 0){
-        t->empty();
+        t->clear();
     }
 
     ifstream data;
@@ -59,6 +62,10 @@ void loadBook(vector<string> *w, vector<float> *t, string path){
 			}
         }
 	}
+    
+    total_words = w->size();
+	total_delays = t->size();
+    
 }
 
 //--------------------------------------------------------------
@@ -69,33 +76,27 @@ void testApp::setup(){
 	ofSetRectMode(OF_RECTMODE_CENTER);
     ofEnableSmoothing();
 
-
     titleIndex = 0;
     bookData[0] = "SemplicaGirls.txt";
     bookData[1] = "HarrisonBerg.txt";
     bookData[2] = "DoAndroids.txt";
     bookData[3] = "ATaleOf.txt";
     
-    titles[0] = "THE SEMPLICA-GIRL DIARIES\n by George Saunders";
-    titles[1] = "HARRISON BERGERON\n by Kurt Vonnegut";
-    titles[2] = "DO ANDROIDS DREAM OF ELECTRIC SHEEP\n by Philip K. Dick";
-    titles[3] = "A TALE OF TWO CITIES\n by Charles Dickens";
-
-    loadBook(&word, &delay, bookData[titleIndex]);
-
-    
-	total_words = word.size();
-	total_delays = delay.size();
+    titles[0] = "THE SEMPLICA-GIRL\nDIARIES by\nGeorge Saunders";
+    titles[1] = "HARRISON BERGERON\nby Kurt Vonnegut";
+    titles[2] = "DO ANDROIDS DREAM\nOF ELECTRIC SHEEP\nby Philip K. Dick";
+    titles[3] = "A TALE OF TWO\nCITIES by\nCharles Dickens";
 
 	index = 0;
 	timer = 0;
 	times.loadFont("times.ttf", 60);
 	ctrlSpeed = 0.25;
 	debug = true;
-	currentDelay = log(1 + delay[index]) * ctrlSpeed;
+    currentDelay = 0;
 
     bFwd = true;
-    bPaused = false;
+    bPaused = true;
+    bStarted = false;
     
 	ard.connect("/dev/tty.usbmodemfd121", 57600);
 
@@ -109,10 +110,10 @@ void testApp::update(){
 
     updateArduino();
     
-	if (ofGetFrameNum() > 5.0) {
+
+    if(word.size() > 0 && delay.size() > 0) {
         
-        
-		if (ofGetElapsedTimef() > timer) {
+        if (ofGetElapsedTimef() > timer) {
             
             if (bFwd) {
                 if(index < word.size()){
@@ -128,14 +129,13 @@ void testApp::update(){
                 }
             }
 
-		}
-
-	}
-
-            
-            
-    if (bPaused) {
-        timer = ofGetElapsedTimef() + (delay[index] * ctrlSpeed);
+        }
+        
+                
+        if (bPaused || !bStarted) {
+            timer = ofGetElapsedTimef() + (delay[index] * ctrlSpeed);
+        }
+        
     }
     
 }
@@ -182,6 +182,10 @@ void testApp::updateArduino(){
 void testApp::digitalPinChanged(const int & pinNum) {
     if(ard.getDigital(4)){
         bPaused = !bPaused;
+        if(!bStarted){
+            bStarted = true;
+            loadBook(&word, &delay, bookData[titleIndex]);
+        }
     }
 }
 
@@ -191,12 +195,17 @@ void testApp::analogPinChanged(const int & pinNum) {
     float speed = ofMap(ard.getAnalog(0), 0, 1024, 0.001, 1.0);
     ctrlSpeed = speed;
 
+    
+    if(bPaused){
+        index = ofMap(ard.getAnalog(1), 0, 1024, 0, word.size());
+    }
+ /*
     if (ard.getAnalog(1) > 512) {
         bFwd = false;
     } else {
         bFwd = true;
     }
-
+  */
 }
 
 //--------------------------------------------------------------
@@ -210,20 +219,30 @@ void testApp::draw(){
 		ofDrawBitmapString("Total Words = " + ofToString(total_words), 10, ofGetHeight() - 30);
 		ofDrawBitmapString("Total Delays = " + ofToString(total_delays), 10, ofGetHeight() - 10);
         
-		ofDrawBitmapString("Word Index = " + ofToString(index), 250, ofGetHeight() - 50);
-		ofDrawBitmapString("Current = " + ofToString(word[index]), 250, ofGetHeight() - 30);
-        
-        ofDrawBitmapString("Control Speed = " + ofToString(ctrlSpeed), 500, ofGetHeight() - 50);
-		ofDrawBitmapString("Word Delay = " + ofToString(delay[index]), 500, ofGetHeight() - 30);
-		ofDrawBitmapString("This Delay = " + ofToString(currentDelay), 500, ofGetHeight() - 10);
-        
+        if(word.size() > 0 && delay.size() > 0) {
+            ofDrawBitmapString("Word Index = " + ofToString(index), 250, ofGetHeight() - 50);
+            ofDrawBitmapString("Current = " + ofToString(word[index]), 250, ofGetHeight() - 30);
+            
+            ofDrawBitmapString("Control Speed = " + ofToString(ctrlSpeed), 500, ofGetHeight() - 50);
+            ofDrawBitmapString("Word Delay = " + ofToString(delay[index]), 500, ofGetHeight() - 30);
+            ofDrawBitmapString("This Delay = " + ofToString(currentDelay), 500, ofGetHeight() - 10);
+        }
         ofDrawBitmapString("Paused = " + ofToString(bPaused), 750, ofGetHeight() - 50);
 		ofDrawBitmapString("Forward = " + ofToString(bFwd), 750, ofGetHeight() - 30);
         
 	}
+    
+    if(bStarted && word.size() > 0 && delay.size() > 0){
+        ofRectangle rect = times.getStringBoundingBox(word[index], 0, 0);
+        times.drawString(word[index], (ofGetWidth()/2) - (rect.width/2), (ofGetHeight()/2) + 30);
+    } else {
+        
+        ofRectangle rect = times.getStringBoundingBox(titles[titleIndex], 0, 0);
+        times.drawString(titles[titleIndex], (ofGetWidth()/2) - (rect.width/2), (ofGetHeight()/2) + 30);
+        
+    }
 
-	ofRectangle rect = times.getStringBoundingBox(word[index], 0, 0);
-	times.drawString(word[index], (ofGetWidth()/2) - (rect.width/2), (ofGetHeight()/2) + 30);
+	
 
 }
 
@@ -233,6 +252,13 @@ void testApp::keyPressed(int key){
 	if(key == ' '){
 		debug = !debug;
 	}
+    if(key == 's'){
+		bStarted = !bStarted;
+        
+        if (bStarted) {
+            loadBook(&word, &delay, bookData[titleIndex]);
+        }
+	}
 	if(key == OF_KEY_UP){
 		ctrlSpeed += 0.01;
 	}
@@ -240,10 +266,18 @@ void testApp::keyPressed(int key){
 		ctrlSpeed -= 0.01;
 	}
     if(key == OF_KEY_LEFT){
-
+        bStarted = false;
+        titleIndex--;
+        if (titleIndex < 0) {
+            titleIndex = 3;
+        }
 	}
 	if(key == OF_KEY_RIGHT){
-
+        bStarted = false;
+        titleIndex++;
+        if (titleIndex > 3) {
+            titleIndex = 0;
+        }
 	}
 }
 
