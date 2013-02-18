@@ -1,4 +1,6 @@
 #pragma once
+#ifndef _TEST_APP
+#define _TEST_APP
 
 #include "ofMain.h"
 #include <fstream>
@@ -12,6 +14,7 @@ class testApp : public ofBaseApp{
 		void setup();
 		void update();
 		void draw();
+
 		void keyPressed(int key);
 		void keyReleased(int key);
 
@@ -29,3 +32,5 @@ class testApp : public ofBaseApp{
 
 		bool			debug;
 };
+
+#endif

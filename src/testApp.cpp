@@ -4,6 +4,7 @@
 void testApp::setup(){
 	ofSetFrameRate(60);
 	ofSetVerticalSync(true);
+<<<<<<< HEAD
 	ofBackground(255,255,255);
 
 	ofSetRectMode(OF_RECTMODE_CENTER);
@@ -73,6 +74,7 @@ str[str.length()-1] == ','){
 	ctrlSpeed = 0.25;
 	debug = true;
 	currentDelay = log(1 + delay[index]) * ctrlSpeed;
+
 }
 
 //--------------------------------------------------------------
@@ -91,6 +93,7 @@ void testApp::update(){
 
 //--------------------------------------------------------------
 void testApp::draw(){
+
 	ofSetColor(0,0,0);
 
 	if(debug){
@@ -119,11 +122,13 @@ ofToString(currentDelay), 100, 200);
 	ofRectangle rect = times.getStringBoundingBox(word[index], 0, 0);
 	times.drawString(word[index], (ofGetWidth()/2) - (rect.width/2), 
 (ofGetHeight()/2) + 30);
+
 }
 
 //--------------------------------------------------------------
 void testApp::keyPressed(int key){
 
+<<<<<<< HEAD
 	if(key == ' '){
 		debug = !debug;
 	}
@@ -133,11 +138,9 @@ void testApp::keyPressed(int key){
 	if(key == OF_KEY_DOWN){
 		ctrlSpeed -= 0.01;
 	}
-
 }
 
 //--------------------------------------------------------------
 void testApp::keyReleased(int key){
 
 }
-
