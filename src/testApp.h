@@ -12,12 +12,11 @@
 class testApp : public ofBaseApp{
 
 	public:
-		void setup();
-		void update();
-		void draw();
-
-		void keyPressed(int key);
-		void keyReleased(int key);
+		void                setup();
+		void                update();
+		void                draw();
+		void                keyPressed(int key);
+		void                keyReleased(int key);
 
         ofTrueTypeFont		times;
     
@@ -25,31 +24,32 @@ class testApp : public ofBaseApp{
         string              titles[4];
         int                 titleIndex;
     
-		ifstream            book;
-		float               time;
 		vector 	<string> 	word;
 		vector 	<float>		delay;
-		float               currentDelay;
+    
 		float               ctrlSpeed;
 		float               timer;
 		int                 index;
 
 		bool                debug;
+        float               currentDelay;
+    
+        bool                bStarted;
+        bool                bFwd;
+        bool                bPaused;
+    
+        int                 historyPos;
+        int                 prevHistory;
 
-        bool bStarted;
-        bool bFwd;
-        bool bPaused;
-
-        ofArduino	ard;
-        bool		bSetupArduino;
+        ofArduino           ard;
+        bool                bSetupArduino;
         
     private:
         
-        void setupArduino(const int & version);
-        void digitalPinChanged(const int & pinNum);
-        void analogPinChanged(const int & pinNum);
-        void updateArduino();
-    
+        void                setupArduino(const int & version);
+        void                digitalPinChanged(const int & pinNum);
+        void                analogPinChanged(const int & pinNum);
+        void                updateArduino();
 
 };
 

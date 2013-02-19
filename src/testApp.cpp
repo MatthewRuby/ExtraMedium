@@ -184,6 +184,7 @@ void testApp::digitalPinChanged(const int & pinNum) {
         bPaused = !bPaused;
         if(!bStarted){
             bStarted = true;
+            bPaused = false;
             loadBook(&word, &delay, bookData[titleIndex]);
         }
     }
@@ -196,16 +197,26 @@ void testApp::analogPinChanged(const int & pinNum) {
     ctrlSpeed = speed;
 
     
-    if(bPaused){
-        index = ofMap(ard.getAnalog(1), 0, 1024, 0, word.size());
+    int enumTitle = ofMap(ard.getAnalog(1), 0, 1024, 0, 4);
+    if(titleIndex != enumTitle){
+        bStarted = false;
+        bPaused = true;
+        titleIndex = enumTitle;
     }
- /*
+    
+    // Stub For Back
+/*    historyPos = ard.getAnalog(1);
+    if(bPaused && prevHistory != historyPos){
+        cout << historyPos << endl;
+//        index = ofMap(ard.getAnalog(1), 0, 1024, 0, word.size());
+    }
     if (ard.getAnalog(1) > 512) {
         bFwd = false;
     } else {
         bFwd = true;
     }
-  */
+    prevHistory = historyPos;
+*/
 }
 
 //--------------------------------------------------------------
@@ -223,12 +234,14 @@ void testApp::draw(){
             ofDrawBitmapString("Word Index = " + ofToString(index), 250, ofGetHeight() - 50);
             ofDrawBitmapString("Current = " + ofToString(word[index]), 250, ofGetHeight() - 30);
             
-            ofDrawBitmapString("Control Speed = " + ofToString(ctrlSpeed), 500, ofGetHeight() - 50);
+            ofDrawBitmapString("Control Speed = " + ofToString(ctrlSpeed, 2), 500, ofGetHeight() - 50);
             ofDrawBitmapString("Word Delay = " + ofToString(delay[index]), 500, ofGetHeight() - 30);
-            ofDrawBitmapString("This Delay = " + ofToString(currentDelay), 500, ofGetHeight() - 10);
+            ofDrawBitmapString("This Delay = " + ofToString(currentDelay, 2), 500, ofGetHeight() - 10);
         }
         ofDrawBitmapString("Paused = " + ofToString(bPaused), 750, ofGetHeight() - 50);
 		ofDrawBitmapString("Forward = " + ofToString(bFwd), 750, ofGetHeight() - 30);
+        
+        ofDrawBitmapString("History = " + ofToString(historyPos), 750, ofGetHeight() - 10);
         
 	}
     
