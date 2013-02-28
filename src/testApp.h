@@ -9,6 +9,11 @@
 #define SPACE_VAL 1.0
 #define PERIOD_VAL 3.0
 
+#define RED_LED 7
+#define GREEN_LED 6
+#define PAUSE_PIN 4
+
+
 class testApp : public ofBaseApp{
 
 	public:

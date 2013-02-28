@@ -122,8 +122,8 @@ void testApp::update(){
                     timer = ofGetElapsedTimef() + currentDelay;
                 }
             } else {
-                if(index < 1){
-                    index++;
+                if(index > 1){
+                    index--;
                     currentDelay = log(1 + delay[index]) * ctrlSpeed;
                     timer = ofGetElapsedTimef() + currentDelay;
                 }
@@ -149,13 +149,13 @@ void testApp::setupArduino(const int & version) {
     cout << ard.getFirmwareName() << endl;
     cout << "firmata v" << ard.getMajorFirmwareVersion() << "." << ard.getMinorFirmwareVersion() << endl;
 
-    ard.sendDigitalPinMode(4, ARD_INPUT);
+    ard.sendDigitalPinMode(PAUSE_PIN, ARD_INPUT);
 
     ard.sendAnalogPinReporting(0, ARD_ANALOG);
     ard.sendAnalogPinReporting(1, ARD_ANALOG);
 
-	ard.sendDigitalPinMode(6, ARD_OUTPUT);
-    ard.sendDigitalPinMode(7, ARD_OUTPUT);
+	ard.sendDigitalPinMode(GREEN_LED, ARD_OUTPUT);
+    ard.sendDigitalPinMode(RED_LED, ARD_OUTPUT);
 
     ofAddListener(ard.EDigitalPinChanged, this, &testApp::digitalPinChanged);
     ofAddListener(ard.EAnalogPinChanged, this, &testApp::analogPinChanged);
@@ -167,12 +167,12 @@ void testApp::updateArduino(){
     ard.update();
     
 	if (bSetupArduino) {
-        if(bPaused){
-            ard.sendDigital(7, ARD_HIGH);
-            ard.sendDigital(6, ARD_LOW);
+        if(bPaused || !bFwd){
+            ard.sendDigital(RED_LED, ARD_HIGH);
+            ard.sendDigital(GREEN_LED, ARD_LOW);
         } else {
-            ard.sendDigital(6, ARD_HIGH);
-            ard.sendDigital(7, ARD_LOW);
+            ard.sendDigital(GREEN_LED, ARD_HIGH);
+            ard.sendDigital(RED_LED, ARD_LOW);
         }
 	}
     
@@ -180,7 +180,8 @@ void testApp::updateArduino(){
 
 //--------------------------------------------------------------
 void testApp::digitalPinChanged(const int & pinNum) {
-    if(ard.getDigital(4)){
+
+    if(ard.getDigital(PAUSE_PIN)){
         bPaused = !bPaused;
         if(!bStarted){
             bStarted = true;
@@ -193,8 +194,13 @@ void testApp::digitalPinChanged(const int & pinNum) {
 //--------------------------------------------------------------
 void testApp::analogPinChanged(const int & pinNum) {
 
-    float speed = ofMap(ard.getAnalog(0), 0, 1024, 0.001, 1.0);
-    ctrlSpeed = speed;
+    float speed = ofMap(ard.getAnalog(0), 0, 1024, -0.6, 0.6);
+    if(speed < 0){
+        bFwd = false;
+    } else {
+        bFwd = true;
+    }
+    ctrlSpeed = 0.61 - abs(speed);
 
     
     int enumTitle = ofMap(ard.getAnalog(1), 0, 1024, 0, 4);
@@ -243,8 +249,13 @@ void testApp::draw(){
         
         ofDrawBitmapString("History = " + ofToString(historyPos), 750, ofGetHeight() - 10);
         
+        ofSetColor(255, 0, 0);
+        float playhead = ofMap(index, 0, total_words, 0, ofGetWidth());
+        ofLine(playhead, ofGetHeight(), playhead, ofGetHeight() - 10);
+        
 	}
     
+    ofSetColor(255, 255, 255);
     if(bStarted && word.size() > 0 && delay.size() > 0){
         ofRectangle rect = times.getStringBoundingBox(word[index], 0, 0);
         times.drawString(word[index], (ofGetWidth()/2) - (rect.width/2), (ofGetHeight()/2) + 30);
@@ -269,6 +280,7 @@ void testApp::keyPressed(int key){
 		bStarted = !bStarted;
         
         if (bStarted) {
+            bPaused = false;
             loadBook(&word, &delay, bookData[titleIndex]);
         }
 	}
