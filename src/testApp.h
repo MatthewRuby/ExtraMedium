@@ -9,9 +9,10 @@
 #define SPACE_VAL 1.0
 #define PERIOD_VAL 3.0
 
-#define RED_LED 7
-#define GREEN_LED 6
-#define PAUSE_PIN 4
+#define RED_LED 8
+#define GREEN_LED 9
+#define PAUSE_PIN 10
+#define SPEED_PIN 0
 
 
 class testApp : public ofBaseApp{
@@ -25,8 +26,9 @@ class testApp : public ofBaseApp{
 
         ofTrueTypeFont		times;
     
-        string              bookData[4];
-        string              titles[4];
+        string              bookData[6];
+        string              titles[6];
+        int                 titlePins[6];
         int                 titleIndex;
     
 		vector 	<string> 	word;
@@ -48,7 +50,13 @@ class testApp : public ofBaseApp{
 
         ofArduino           ard;
         bool                bSetupArduino;
-        
+    
+    
+        int buttonState;
+        int lastButtonState;
+        float lastDebounceTime;
+        float debounceDelay;
+    
     private:
         
         void                setupArduino(const int & version);

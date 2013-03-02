@@ -81,12 +81,23 @@ void testApp::setup(){
     bookData[1] = "HarrisonBerg.txt";
     bookData[2] = "DoAndroids.txt";
     bookData[3] = "ATaleOf.txt";
+    bookData[4] = "HungerGames.txt";
+    bookData[5] = "GivingTree.txt";
     
     titles[0] = "THE SEMPLICA-GIRL\nDIARIES by\nGeorge Saunders";
     titles[1] = "HARRISON BERGERON\nby Kurt Vonnegut";
     titles[2] = "DO ANDROIDS DREAM\nOF ELECTRIC SHEEP\nby Philip K. Dick";
     titles[3] = "A TALE OF TWO\nCITIES by\nCharles Dickens";
-
+    titles[4] = "HUNGER GAMES\nby Suzanne Collins";
+    titles[5] = "THE GIVING TREE\nby Shel Silverstein";
+    
+    titlePins[0] = 7;
+    titlePins[1] = 6;
+    titlePins[2] = 5;
+    titlePins[3] = 4;
+    titlePins[4] = 3;
+    titlePins[5] = 2;
+    
 	index = 0;
 	timer = 0;
 	times.loadFont("times.ttf", 60);
@@ -94,15 +105,23 @@ void testApp::setup(){
 	debug = true;
     currentDelay = 0;
 
-    bFwd = true;
+    bFwd = false;
     bPaused = true;
     bStarted = false;
     
+    //tty.usbmodemfa131
+    //tty.usbmodemfd121
 	ard.connect("/dev/tty.usbmodemfd121", 57600);
 
 	ofAddListener(ard.EInitialized, this, &testApp::setupArduino);
 	bSetupArduino	= false;
+    
 
+    buttonState = 0;
+    lastButtonState = 0;
+    lastDebounceTime = 0.0;
+    debounceDelay = 1.0;
+    
 }
 
 //--------------------------------------------------------------
@@ -110,7 +129,6 @@ void testApp::update(){
 
     updateArduino();
     
-
     if(word.size() > 0 && delay.size() > 0) {
         
         if (ofGetElapsedTimef() > timer) {
@@ -118,17 +136,14 @@ void testApp::update(){
             if (bFwd) {
                 if(index < word.size()){
                     index++;
-                    currentDelay = log(1 + delay[index]) * ctrlSpeed;
-                    timer = ofGetElapsedTimef() + currentDelay;
                 }
             } else {
                 if(index > 1){
                     index--;
-                    currentDelay = log(1 + delay[index]) * ctrlSpeed;
-                    timer = ofGetElapsedTimef() + currentDelay;
                 }
             }
-
+            currentDelay = log(1 + delay[index]) * ctrlSpeed;
+            timer = ofGetElapsedTimef() + currentDelay;
         }
         
                 
@@ -150,9 +165,10 @@ void testApp::setupArduino(const int & version) {
     cout << "firmata v" << ard.getMajorFirmwareVersion() << "." << ard.getMinorFirmwareVersion() << endl;
 
     ard.sendDigitalPinMode(PAUSE_PIN, ARD_INPUT);
-
-    ard.sendAnalogPinReporting(0, ARD_ANALOG);
-    ard.sendAnalogPinReporting(1, ARD_ANALOG);
+    for (int i = 0; i < 6; i ++) {
+        ard.sendDigitalPinMode(titlePins[i], ARD_INPUT);
+    }
+    ard.sendAnalogPinReporting(SPEED_PIN, ARD_ANALOG);
 
 	ard.sendDigitalPinMode(GREEN_LED, ARD_OUTPUT);
     ard.sendDigitalPinMode(RED_LED, ARD_OUTPUT);
@@ -176,25 +192,59 @@ void testApp::updateArduino(){
         }
 	}
     
+    float speed = ofMap(1024 - ard.getAnalog(SPEED_PIN), 1, 1024, -0.6, 0.6);
+    if(speed < 0){
+        bFwd = false;
+    } else {
+        bFwd = true;
+    }
+    ctrlSpeed = 0.61 - abs(speed);
+    
 }
 
 //--------------------------------------------------------------
 void testApp::digitalPinChanged(const int & pinNum) {
+    
+    int reading = ard.getDigital(PAUSE_PIN);
+    
+    if (reading != lastButtonState) {
+        lastDebounceTime = ofGetElapsedTimef();
+    }
 
-    if(ard.getDigital(PAUSE_PIN)){
-        bPaused = !bPaused;
-        if(!bStarted){
-            bStarted = true;
-            bPaused = false;
-            loadBook(&word, &delay, bookData[titleIndex]);
+    if (lastDebounceTime + debounceDelay > ofGetElapsedTimef()) {
+        if(reading == 1) {
+            bPaused = !bPaused;
+            if(!bStarted){
+                bStarted = true;
+                bPaused = false;
+                loadBook(&word, &delay, bookData[titleIndex]);
+            }
         }
     }
+
+    
+    
+    int enumTitle = titleIndex;
+    
+    for (int i = 0; i < 6; i ++) {
+        if(ard.getDigital(titlePins[i]) == 1){
+            enumTitle = i;
+        }
+    }
+    if(titleIndex != enumTitle){
+        bStarted = false;
+        bPaused = true;
+        titleIndex = enumTitle;
+    }
+    
+    
+    lastButtonState = reading;
 }
 
 //--------------------------------------------------------------
 void testApp::analogPinChanged(const int & pinNum) {
 
-    float speed = ofMap(ard.getAnalog(0), 0, 1024, -0.6, 0.6);
+    float speed = ofMap(1024 - ard.getAnalog(SPEED_PIN), 1, 1024, -0.6, 0.6);
     if(speed < 0){
         bFwd = false;
     } else {
@@ -202,27 +252,6 @@ void testApp::analogPinChanged(const int & pinNum) {
     }
     ctrlSpeed = 0.61 - abs(speed);
 
-    
-    int enumTitle = ofMap(ard.getAnalog(1), 0, 1024, 0, 4);
-    if(titleIndex != enumTitle){
-        bStarted = false;
-        bPaused = true;
-        titleIndex = enumTitle;
-    }
-    
-    // Stub For Back
-/*    historyPos = ard.getAnalog(1);
-    if(bPaused && prevHistory != historyPos){
-        cout << historyPos << endl;
-//        index = ofMap(ard.getAnalog(1), 0, 1024, 0, word.size());
-    }
-    if (ard.getAnalog(1) > 512) {
-        bFwd = false;
-    } else {
-        bFwd = true;
-    }
-    prevHistory = historyPos;
-*/
 }
 
 //--------------------------------------------------------------
@@ -250,7 +279,7 @@ void testApp::draw(){
         ofDrawBitmapString("History = " + ofToString(historyPos), 750, ofGetHeight() - 10);
         
         ofSetColor(255, 0, 0);
-        float playhead = ofMap(index, 0, total_words, 0, ofGetWidth());
+        float playhead = ofMap(index, 1, total_words, 0, ofGetWidth());
         ofLine(playhead, ofGetHeight(), playhead, ofGetHeight() - 10);
         
 	}
@@ -294,13 +323,13 @@ void testApp::keyPressed(int key){
         bStarted = false;
         titleIndex--;
         if (titleIndex < 0) {
-            titleIndex = 3;
+            titleIndex = 5;
         }
 	}
 	if(key == OF_KEY_RIGHT){
         bStarted = false;
         titleIndex++;
-        if (titleIndex > 3) {
+        if (titleIndex > 5) {
             titleIndex = 0;
         }
 	}
